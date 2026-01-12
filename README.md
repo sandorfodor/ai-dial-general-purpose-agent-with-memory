@@ -99,3 +99,8 @@
 ---
 
 <img src="dialx-banner.png">
+
+
+```bash
+docker build -t python-docker-app .;docker run --name docker-app -it --rm --network ai-dial-general-purpose-agent-with-memory_my-network python-docker-app
+```

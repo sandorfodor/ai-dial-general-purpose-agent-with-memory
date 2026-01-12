@@ -18,7 +18,7 @@ from task.tools.py_interpreter.python_code_interpreter_tool import PythonCodeInt
 from task.tools.rag.document_cache import DocumentCache
 from task.tools.rag.rag_tool import RagTool
 
-DIAL_ENDPOINT = os.getenv('DIAL_ENDPOINT', "http://localhost:8080")
+DIAL_ENDPOINT = os.getenv('DIAL_ENDPOINT', "http://core:8080")
 DEPLOYMENT_NAME = os.getenv('DEPLOYMENT_NAME', 'gpt-4o')
 # DEPLOYMENT_NAME = os.getenv('DEPLOYMENT_NAME', 'claude-sonnet-3-7')
 
@@ -55,16 +55,18 @@ class GeneralPurposeAgentApplication(ChatCompletion):
                 document_cache=DocumentCache.create()
             ),
             await PythonCodeInterpreterTool.create(
-                mcp_url="http://localhost:8050/mcp",
+                mcp_url="http://python-interpreter:8050/mcp",
                 tool_name="execute_code",
                 dial_endpoint=DIAL_ENDPOINT
             ),
 
-            #TODO:
-            # Add tools with Long-term memory capabilities
+            # Long-term memory tools
+            StoreMemoryTool(memory_store=self.memory_store),
+            SearchMemoryTool(memory_store=self.memory_store),
+            DeleteMemoryTool(memory_store=self.memory_store),
         ]
 
-        tools.extend(await self._get_mcp_tools("http://localhost:8051/mcp"))
+        tools.extend(await self._get_mcp_tools("http://ddg-search:8051/mcp"))
 
         return tools
 
@@ -90,11 +92,11 @@ app: DIALApp = DIALApp()
 agent_app = GeneralPurposeAgentApplication()
 app.add_chat_completion(deployment_name="general-purpose-agent", impl=agent_app)
 
-if __name__ == "__main__":
-    import uvicorn
 
-    config = uvicorn.Config(app, port=5030, host="0.0.0.0")
-    server = uvicorn.Server(config)
-    import asyncio
+import uvicorn
 
-    asyncio.run(server.serve())
+config = uvicorn.Config(app, port=5030, host="0.0.0.0")
+server = uvicorn.Server(config)
+import asyncio
+
+asyncio.run(server.serve())
